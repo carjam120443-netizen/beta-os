@@ -1,4 +1,4 @@
-name: Build Beta OS
+name: Build Beta OS x86_64
 
 on:
   push:
@@ -13,17 +13,26 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install NASM and QEMU
-        run: sudo apt-get update && sudo apt-get install -y nasm qemu-system-x86
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc binutils make nasm grub-pc-bin grub-common xorriso qemu-system-x86
 
-      - name: Build disk image
+      - name: Build x86_64 kernel and ISO
         run: make
 
-      - name: Smoke test image
-        run: timeout 5s qemu-system-x86_64 -drive format=raw,file=build/beta-os.img -display none -serial stdio || test $? -eq 124
+      - name: Smoke test kernel with QEMU
+        run: |
+          timeout 8s qemu-system-x86_64 -cdrom build/beta-os.iso -display none -serial none || test $? -eq 124
 
-      - name: Upload image
+      - name: Upload Beta OS ISO
         uses: actions/upload-artifact@v4
         with:
-          name: beta-os-image
-          path: build/beta-os.img
+          name: beta-os-x86_64-iso
+          path: build/beta-os.iso
+
+      - name: Upload kernel ELF
+        uses: actions/upload-artifact@v4
+        with:
+          name: beta-os-x86_64-kernel
+          path: build/kernel.elf
