@@ -1,68 +1,120 @@
 # Beta OS 🧪
 
-> A from-scratch x86_64 operating system project.
+> A from-scratch **x86_64** operating system.
 
-Beta OS is an experimental operating system being built from the ground up for learning, experimentation, and eventually becoming a complete standalone OS.
+Beta OS is an experimental operating system being written from the ground up. It is **not Linux-based** and does not use a Linux kernel.
 
-**This is not a Linux distribution.** The goal is to write the kernel, low-level components, userspace, drivers, filesystem support, and tooling ourselves.
+The project starts at the bootloader/kernel boundary and will gradually grow into a complete operating system with its own kernel, drivers, userspace, filesystem, shell, package manager, and graphical stack.
 
-## 🚧 Current status
+## 🚀 Current status
 
-**Stage: Bootloader prototype**
+**Stage: x86_64 kernel bring-up**
 
-The repository currently contains a minimal BIOS boot sector that creates a bootable disk image and displays an initial boot message.
+Beta OS now has a real 64-bit kernel entry path. GRUB loads the kernel using Multiboot2, the bootstrap code creates initial paging structures, enables CPU long mode, and transfers control to a freestanding C kernel.
+
+The kernel currently initializes the VGA text display and confirms that it reached 64-bit mode.
 
 ### Roadmap
 
-- [x] Initial BIOS boot sector
-- [x] Bootable disk image
-- [x] QEMU run target
-- [x] Automated GitHub Actions build
-- [ ] Enter x86_64 long mode
-- [ ] Load a real kernel
-- [ ] Kernel entry point
-- [ ] GDT and IDT
-- [ ] Interrupt handling
-- [ ] Physical and virtual memory management
-- [ ] Keyboard input
-- [ ] Timer support
-- [ ] Kernel heap
-- [ ] Basic process/task system
-- [ ] System calls
-- [ ] Filesystem
-- [ ] Userspace and `init`
+- [x] Initial boot prototype
+- [x] x86_64 kernel ELF
+- [x] Multiboot2 boot header
+- [x] 64-bit long-mode transition
+- [x] Initial page tables
+- [x] C kernel entry point
+- [x] VGA text output
+- [x] Bootable ISO
+- [x] GitHub Actions build
+- [ ] GDT cleanup and kernel descriptor management
+- [ ] IDT and interrupt handlers
+- [ ] PIC/APIC support
+- [ ] Physical memory manager
+- [ ] Virtual memory manager
+- [ ] Kernel heap allocator
+- [ ] PS/2 keyboard driver
+- [ ] PIT/HPET/APIC timer
+- [ ] Process and thread scheduler
+- [ ] System-call interface
+- [ ] Executable loader
+- [ ] Virtual filesystem layer
+- [ ] Disk driver
+- [ ] BetaFS filesystem
+- [ ] `init` and userspace
 - [ ] Interactive shell
-- [ ] Networking
-- [ ] Graphics/framebuffer
+- [ ] `pkg` package manager
+- [ ] Networking stack
+- [ ] Framebuffer graphics
+- [ ] Window manager
 - [ ] Desktop environment
 
-## 🏗️ Project layout
+## 🧠 Architecture
+
+Beta OS targets **64-bit x86 (x86_64 / AMD64)**.
+
+```text
+BIOS/firmware
+      │
+      ▼
+    GRUB
+      │
+      ▼
+ Multiboot2
+      │
+      ▼
+32-bit bootstrap
+      │
+      ├── page tables
+      ├── PAE
+      ├── EFER.LME
+      └── CR0.PG
+      │
+      ▼
+ x86_64 long mode
+      │
+      ▼
+  C kernel
+      │
+      ▼
+  Kernel services
+```
+
+The current kernel identity-maps the first 2 MiB with a 2 MiB page so the earliest 64-bit code has a simple address space. This will be replaced by a proper virtual-memory subsystem later.
+
+## 📁 Project layout
 
 ```text
 beta-os/
-├── boot/                 # Boot code
-│   └── boot.asm
-├── kernel/               # Kernel source
-├── libc/                 # Userspace C library
-├── userspace/            # Programs and shell
-├── filesystem/           # Filesystem implementation
-├── tools/                # Development/build tools
-├── scripts/              # Build and testing scripts
-├── .github/workflows/    # Automated builds
-└── Makefile              # Local build entry point
+├── boot/
+│   ├── boot.asm          # x86_64 entry + long-mode setup
+│   └── linker.ld         # Kernel linker script
+├── grub/
+│   └── grub.cfg          # Boot menu/configuration
+├── kernel/
+│   └── kernel.c          # First C kernel
+├── libc/                 # Future userspace C library
+├── userspace/            # Future userspace programs
+├── filesystem/           # Future filesystem code
+├── tools/                # Development tools
+├── scripts/              # Build/test scripts
+├── .github/workflows/    # CI builds
+└── Makefile              # Kernel + ISO build system
 ```
 
-## 🔨 Building
+## 🔨 Build Beta OS
 
 ### Requirements
 
 A Linux development environment with:
 
-- `make`
-- `nasm`
-- `qemu-system-x86_64`
+- GCC
+- GNU binutils
+- Make
+- NASM
+- GRUB tools
+- Xorriso
+- QEMU
 
-Build the disk image:
+Build the x86_64 kernel and bootable ISO:
 
 ```bash
 make
@@ -80,52 +132,63 @@ Clean generated files:
 make clean
 ```
 
-The generated image is placed at:
+Build output:
 
 ```text
-build/beta-os.img
+build/kernel.elf
+build/beta-os.iso
 ```
 
-## 🤖 Automated builds
+## 🖥️ VirtualBox
 
-Every push and pull request can build the OS through GitHub Actions. The workflow installs NASM and QEMU, creates the disk image, performs a basic QEMU smoke test, and uploads the resulting image as an artifact.
+The generated ISO is intended to be usable as a BIOS boot ISO in VirtualBox as well as QEMU.
 
-## 🎯 Long-term goal
+Create a new VM with:
 
-Beta OS is intended to grow from a tiny bootable experiment into a real general-purpose operating system with its own:
+- Type: **Other**
+- Architecture: **x86_64**
+- RAM: 512 MB or more
+- Storage: optional for now
+- Optical drive: `beta-os.iso`
+- EFI: disabled for the current BIOS/GRUB boot path
 
-- Kernel
-- Boot process
-- Drivers
-- Process model
-- Memory manager
-- Filesystem
-- Userspace
-- Shell
-- Package manager
-- Networking stack
-- Graphical system
+UEFI support will be added later.
 
-The package manager is planned to eventually provide commands such as:
+## 🤖 Continuous integration
+
+GitHub Actions builds the x86_64 kernel and ISO on pushes, pull requests, and manual workflow runs. The workflow also performs a QEMU smoke test and uploads both the ISO and kernel ELF as build artifacts.
+
+## 📦 Future package manager
+
+Beta OS will eventually have its own native package manager called `pkg`.
+
+Planned commands:
 
 ```text
-pkg install <package>
-pkg remove <package>
+pkg search <name>
+pkg install <name>
+pkg remove <name>
 pkg update
 pkg upgrade
-pkg search <package>
+pkg list
+pkg info <name>
+pkg repo add <url>
 ```
 
-## 🧪 Development philosophy
+The package format, repository format, dependency resolver, signatures, and installation database will be designed specifically for Beta OS rather than copied directly from an existing Linux distribution.
 
-Beta OS will be developed in small, testable stages. Early versions will prioritize understanding and correctness over performance or feature count.
+## 🎯 Long-term vision
 
-QEMU and VirtualBox are the primary testing targets while the low-level system is under development.
+The end goal is a standalone general-purpose OS built layer by layer:
+
+**boot → kernel → drivers → memory → processes → filesystem → userspace → networking → graphics → desktop → applications**
+
+No Linux kernel. No Ubuntu base. No Debian base. Just Beta OS. 🧪
+
+## ⚠️ Experimental
+
+Beta OS is extremely early-stage software. Crashes and incomplete functionality are expected while the kernel is being developed.
 
 ## 📜 License
 
 A project license will be added as the project matures.
-
----
-
-**Beta OS is experimental software. Expect bugs, crashes, missing features, and occasional kernel-induced chaos.** 💀
