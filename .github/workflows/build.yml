@@ -19,7 +19,9 @@ jobs:
           sudo apt-get install -y gcc binutils make nasm grub-pc-bin grub-common xorriso mtools qemu-system-x86
 
       - name: Create persistent Beta OS disk
-        run: dd if=/dev/zero of=build/beta-os-disk.img bs=1M count=16 status=none
+        run: |
+          mkdir -p build
+          dd if=/dev/zero of=build/beta-os-disk.img bs=1M count=16 status=none
 
       - name: Build x86_64 kernel and ISO
         run: make
