@@ -23,6 +23,15 @@ _start:
     cli
     mov esp, stack_top
 
+    ; Build the page tables at runtime. They cannot contain initializers
+    ; in .bss because NASM discards those initializers.
+    mov dword [pml4_table], pdpt_table + 0x003
+    mov dword [pml4_table + 4], 0
+    mov dword [pdpt_table], page_directory + 0x003
+    mov dword [pdpt_table + 4], 0
+    mov dword [page_directory], 0x00000083
+    mov dword [page_directory + 4], 0
+
     ; Load the identity-mapped PML4.
     mov eax, pml4_table
     mov cr3, eax
@@ -75,19 +84,17 @@ gdt64:
 section .bss
 align 4096
 pml4_table:
-    dq pdpt_table + 0x003
-    times 511 dq 0
+    resq 512
 
 pdpt_table:
-    dq page_directory + 0x003
-    times 511 dq 0
+    resq 512
 
 page_directory:
-    ; Identity-map the first 2 MiB with one 2 MiB page.
-    dq 0x0000000000000083
-    times 511 dq 0
+    resq 512
 
 align 16
 stack_bottom:
     resb 16384
 stack_top:
+
+section .note.GNU-stack noalloc noexec nowrite progbits
