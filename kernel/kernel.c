@@ -1,4 +1,8 @@
 #include <stdint.h>
+#include "fs.h"
+#include "net.h"
+#include "exec.h"
+#include "shell.h"
 
 #define VGA_MEMORY ((volatile uint16_t*)0xB8000)
 #define VGA_WIDTH 80
@@ -22,15 +26,17 @@ static void print_at(const char *text, uint32_t row) {
 
 void kmain(uint32_t multiboot_info) {
     (void)multiboot_info;
-
     clear_screen();
-    print_at("Beta OS", 2);
-    print_at("x86_64 kernel online.", 4);
-    print_at("Entered 64-bit long mode successfully.", 5);
-    print_at("Kernel initialization is beginning...", 7);
-    print_at("Next: GDT, IDT, interrupts, memory, and drivers.", 9);
+    print_at("Beta OS", 1);
+    print_at("x86_64 kernel online.", 2);
+    print_at("Initializing filesystem, networking, userspace, and shell...", 4);
 
-    for (;;) {
-        __asm__ volatile ("hlt");
-    }
+    fs_init();
+    exec_init();
+    net_init();
+    (void)fs_create("/etc/os-release", "NAME=Beta OS\nARCH=x86_64\n", 25);
+    (void)exec_register("/bin/init", 0, 0);
+
+    shell_run();
+    for (;;) __asm__ volatile ("hlt");
 }
