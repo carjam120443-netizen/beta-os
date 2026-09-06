@@ -1,21 +1,36 @@
 BUILD := build
+KERNEL := $(BUILD)/kernel.elf
+ISO := $(BUILD)/beta-os.iso
 
-.PHONY: all clean run
+CFLAGS := -m64 -ffreestanding -fno-pie -fno-stack-protector -mno-red-zone -Wall -Wextra -Werror -O2
+LDFLAGS := -m elf_x86_64 -nostdlib -z max-page-size=0x1000
 
-all: $(BUILD)/beta-os.img
+.PHONY: all iso run clean
+
+all: $(ISO)
 
 $(BUILD):
 	mkdir -p $(BUILD)
 
-$(BUILD)/boot.bin: boot/boot.asm | $(BUILD)
-	nasm -f bin $< -o $@
+$(BUILD)/boot.o: boot/boot.asm | $(BUILD)
+	nasm -f elf64 $< -o $@
 
-$(BUILD)/beta-os.img: $(BUILD)/boot.bin
-	dd if=/dev/zero of=$@ bs=512 count=2880 status=none
-	dd if=$(BUILD)/boot.bin of=$@ bs=512 count=1 conv=notrunc status=none
+$(BUILD)/kernel.o: kernel/kernel.c | $(BUILD)
+	gcc $(CFLAGS) -c $< -o $@
 
-run: $(BUILD)/beta-os.img
-	qemu-system-x86_64 -drive format=raw,file=$(BUILD)/beta-os.img
+$(KERNEL): $(BUILD)/boot.o $(BUILD)/kernel.o boot/linker.ld
+	ld $(LDFLAGS) -T boot/linker.ld -o $@ $(BUILD)/boot.o $(BUILD)/kernel.o
+
+$(ISO): $(KERNEL) grub/grub.cfg
+	mkdir -p $(BUILD)/iso/boot/grub
+	cp $(KERNEL) $(BUILD)/iso/boot/kernel.elf
+	cp grub/grub.cfg $(BUILD)/iso/boot/grub/grub.cfg
+	grub-mkrescue -o $@ $(BUILD)/iso
+
+iso: $(ISO)
+
+run: $(ISO)
+	qemu-system-x86_64 -cdrom $(ISO)
 
 clean:
 	rm -rf $(BUILD)
