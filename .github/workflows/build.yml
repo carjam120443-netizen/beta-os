@@ -16,7 +16,7 @@ jobs:
       - name: Install toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc binutils make nasm grub-pc-bin grub-common xorriso qemu-system-x86
+          sudo apt-get install -y gcc binutils make nasm grub-pc-bin grub-common xorriso mtools qemu-system-x86
 
       - name: Build x86_64 kernel and ISO
         run: make
