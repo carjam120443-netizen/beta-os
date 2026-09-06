@@ -7,6 +7,9 @@
 #define FS_MAX_FILES 32
 #define FS_NAME_MAX 64
 #define FS_DATA_MAX 4096
+#define FS_SECTOR_SIZE 512
+#define FS_DISK_LBA 2048
+#define FS_DISK_MAGIC 0x31534642u /* BFS1 */
 
 typedef struct {
     char name[FS_NAME_MAX];
@@ -17,7 +20,11 @@ typedef struct {
 
 void fs_init(void);
 int fs_create(const char *name, const void *data, size_t size);
+int fs_write(const char *name, const void *data, size_t size);
+int fs_remove(const char *name);
 const fs_file_t *fs_find(const char *name);
 size_t fs_read(const char *name, void *out, size_t max_size);
+int fs_is_persistent(void);
+int fs_sync(void);
 
 #endif
