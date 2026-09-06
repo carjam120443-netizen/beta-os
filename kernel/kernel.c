@@ -9,7 +9,7 @@
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 static void clear_screen(void){for(uint32_t y=0;y<VGA_HEIGHT;++y)for(uint32_t x=0;x<VGA_WIDTH;++x)VGA_MEMORY[y*VGA_WIDTH+x]=0x0700|' ';}
-static void print_at(const char*t,uint32_t r){uint32_t c=0;while(t[c]&&c<VGA_WIDTH)VGA_MEMORY[r*VGA_WIDTH+c]=0x0F00|(uint8_t)t[c++];}
+static void print_at(const char*t,uint32_t r){uint32_t c=0;while(t[c]&&c<VGA_WIDTH){VGA_MEMORY[r*VGA_WIDTH+c]=0x0F00|(uint8_t)t[c];c++;}}
 void kmain(uint32_t multiboot_info){
     (void)multiboot_info;clear_screen();print_at("Beta OS",1);print_at("x86_64 kernel online.",2);print_at("Initializing storage, memory, networking, userspace, and shell...",4);
     mem_init();fs_init();exec_init();net_init();
