@@ -34,11 +34,6 @@ static int eq(const char *a, const char *b) {
     return a[i] == b[i];
 }
 
-static void clear_line(void) {
-    for (uint32_t x = 0; x < VGA_WIDTH; ++x) VGA_MEMORY[row * VGA_WIDTH + x] = 0x0F00 | ' ';
-    col = 0;
-}
-
 static char keymap(uint8_t scancode) {
     static const char map[] = "\0\0" "1234567890-=" "\0" "qwertyuiop[]" "\0" "asdfghjkl;'`" "\\" "zxcvbnm,./";
     if (scancode < 2 || scancode > 53) return 0;
