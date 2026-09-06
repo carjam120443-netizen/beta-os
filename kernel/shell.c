@@ -2,6 +2,7 @@
 #include "fs.h"
 #include "net.h"
 #include "exec.h"
+#include "mem.h"
 #include <stdint.h>
 #include <stddef.h>
 
@@ -30,7 +31,7 @@ static void command(const char*cmd){
     else if(eq(op,"write")){if(!arg[0]||!p[0])puts("usage: write <file> <text>");else puts(fs_write(arg,p,text_len)==0?"write: ok":"write: failed");}
     else if(eq(op,"rm")){if(!arg[0])puts("usage: rm <file>");else puts(fs_remove(arg)==0?"rm: ok":"rm: failed");}
     else if(eq(op,"sync"))puts(fs_sync()==0?"filesystem: synced":"filesystem: not persistent");
-    else if(eq(op,"mem"))puts("memory: kernel allocator pending");
+    else if(eq(op,"mem")){puts("memory allocator: ");puts(mem_used()?"active":"ready");}
     else if(eq(op,"net"))puts(net_is_ready()?"network core: ready (loopback)":"network core: offline");
     else if(eq(op,"pkg")){puts("pkg: repository configuration loaded");puts("OpenBSD-current packages need a compatible userspace");}
     else if(!op[0])return;else puts("unknown command");
