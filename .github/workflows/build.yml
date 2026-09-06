@@ -1,0 +1,29 @@
+name: Build Beta OS
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install NASM and QEMU
+        run: sudo apt-get update && sudo apt-get install -y nasm qemu-system-x86
+
+      - name: Build disk image
+        run: make
+
+      - name: Smoke test image
+        run: timeout 5s qemu-system-x86_64 -drive format=raw,file=build/beta-os.img -display none -serial stdio || test $? -eq 124
+
+      - name: Upload image
+        uses: actions/upload-artifact@v4
+        with:
+          name: beta-os-image
+          path: build/beta-os.img
